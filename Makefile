@@ -55,7 +55,7 @@ all: library
 clean:
 		$(RM) $(SRC_OBJ) $(TST_OBJ) $(LIBRARY) $(TST_EXE:%=$(BLD_DIR)/%)
 
-.PHONY: all clean $(TST_EXE) build
+.PHONY: all clean $(TST_EXE)
 
 # DIRECTORIES ------------------------------------------------------------------
 

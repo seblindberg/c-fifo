@@ -61,25 +61,25 @@ void
   fifo__flush(fifo_t *fifo);
 
 bool_t
-  fifo__is_full(fifo_t * const fifo);
+  fifo__is_full(fifo_t const *fifo);
   
 bool_t
-  fifo__is_empty(fifo_t * const fifo);
+  fifo__is_empty(fifo_t const *fifo);
   
 size_t
-  fifo__size(fifo_t * const fifo);
+  fifo__size(fifo_t const *fifo);
   
 size_t
-  fifo__used(fifo_t * const fifo);
+  fifo__used(fifo_t const *fifo);
   
 size_t
-  fifo__available(fifo_t * const fifo);
+  fifo__available(fifo_t const *fifo);
   
 size_t
   fifo__write(fifo_t *fifo, void const *src, size_t len);
   
 bool_t
-  fifo__write_force(fifo_t *fifo, void *src, size_t len);
+  fifo__write_force(fifo_t *fifo, void const *src, size_t len);
 
 size_t
   fifo__read(fifo_t *fifo, void *dest, size_t size);

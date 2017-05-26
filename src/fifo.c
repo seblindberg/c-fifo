@@ -25,7 +25,7 @@
 /* Private Functions -------------------------------------------------------- */
 
 static inline bool_t
-  buffer_includes_edge(fifo_t * const fifo);
+  buffer_includes_edge(fifo_t const *fifo);
 
 static void
   grow_buffer(fifo_t *fifo, uint8_t mask);
@@ -152,7 +152,7 @@ void fifo__flush(fifo_t *fifo)
  * The lowest bit of the mask is used to indicate a full buffer.
  */
  
-bool_t fifo__is_full(fifo_t * const fifo)
+bool_t fifo__is_full(fifo_t const *fifo)
 {
   assert(fifo != NULL);
   
@@ -163,7 +163,7 @@ bool_t fifo__is_full(fifo_t * const fifo)
 /* Returns non-zero if the fifo is empty.
  */
 
-bool_t fifo__is_empty(fifo_t * const fifo)
+bool_t fifo__is_empty(fifo_t const *fifo)
 {
   assert(fifo != NULL);
   
@@ -175,7 +175,7 @@ bool_t fifo__is_empty(fifo_t * const fifo)
 /* Returns the total size of the buffer in bytes.
  */
 
-size_t fifo__size(fifo_t * const fifo)
+size_t fifo__size(fifo_t const *fifo)
 {
   assert(fifo != NULL);
   
@@ -190,7 +190,7 @@ size_t fifo__size(fifo_t * const fifo)
 /* Returns the number of bytes currently used.
  */
 
-size_t fifo__used(fifo_t * const fifo)
+size_t fifo__used(fifo_t const *fifo)
 {
   uint8_t mask = fifo->mask;
   size_t  used;
@@ -220,7 +220,7 @@ size_t fifo__used(fifo_t * const fifo)
 /* Returns the number of free bytes in the buffer.
  */
 
-size_t fifo__available(fifo_t * const fifo)
+size_t fifo__available(fifo_t const *fifo)
 {
   uint8_t mask = fifo->mask;
   size_t  available;
@@ -302,7 +302,7 @@ size_t fifo__write(fifo_t *fifo, void const *src, size_t len)
 /* Not yet implemented.
  */
 
-bool_t fifo__write_force(fifo_t *fifo, void *src, size_t len)
+bool_t fifo__write_force(fifo_t *fifo, void const *src, size_t len)
 {
   assert(0);
   return 0;
@@ -310,7 +310,7 @@ bool_t fifo__write_force(fifo_t *fifo, void *src, size_t len)
 
 
 /* Read a number of bytes from the buffer.
- * Returns the number of bytes that where successfully read. 
+ * Returns the number of bytes that where successfully read.
  */
 
 size_t fifo__read(fifo_t *fifo, void *dest, size_t len)
@@ -379,7 +379,7 @@ size_t fifo__read(fifo_t *fifo, void *dest, size_t len)
 /* Check if the data currently held by the fifo wraps around the outer edges of
  * the buffer. */
 
-bool_t buffer_includes_edge(fifo_t * const fifo)
+bool_t buffer_includes_edge(fifo_t const *fifo)
 {
   uint8_t read_pos  = fifo->read;
   uint8_t write_pos = fifo->write;
