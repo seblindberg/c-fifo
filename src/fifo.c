@@ -24,6 +24,9 @@
 
 /* Private Functions -------------------------------------------------------- */
 
+static inline bool_t
+  buffer_includes_edge(fifo_t * const fifo);
+
 static void
   grow_buffer(fifo_t *fifo, uint8_t mask);
   
@@ -31,7 +34,7 @@ static fifo__result_t
   shrink_buffer(fifo_t *fifo, uint8_t mask);
   
 static uint8_t
-  size_to_mask(size_t size);
+  size_to_mask(size_t size) PURE;
 
 
 /* Global Variables --------------------------------------------------------- */
@@ -41,8 +44,16 @@ static uint8_t
 
 /* Function Definitions ----------------------------------------------------- */
 
+/* Initialize a new fifo object.
+ *
+ * Calling fifo__ctor(fifo, NULL, 0) will initialize a zero size fifo that will
+ * always read as both empty and full. If instead a buffer handle was provided
+ * the fifo can be resized using fifo__resize.
+ */
+
 void fifo__ctor(fifo_t *fifo, void *buffer, size_t size)
 {
+  assert(fifo != NULL);
   assert(size <= FIFO__SIZE_MAX);
   assert(size >= FIFO__SIZE_MIN || size == 0);
   
@@ -51,8 +62,8 @@ void fifo__ctor(fifo_t *fifo, void *buffer, size_t size)
   if (size == 0) {
     fifo->mask = 0;
   } else {
-    //fifo->mask = size - 1;
     fifo->mask = size_to_mask(size);
+    //fifo->mask = size - 1;
     /* Size must be a power of 2 */
     //assert((~fifo->mask & size) == size);
   }
@@ -61,10 +72,17 @@ void fifo__ctor(fifo_t *fifo, void *buffer, size_t size)
   fifo->write  = 0;
 }
 
+
+/* Change the size of the fifo buffer. Note that the underlying memory area must
+ * be big enough to contain the new size.
+ */
+
 fifo__result_t fifo__resize(fifo_t *fifo, size_t new_size)
 {
   size_t current_size = fifo->mask;
   uint8_t new_mask;
+  
+  assert(fifo != NULL);
   
   if (current_size & 0x0001) {
     current_size += 1;
@@ -112,8 +130,14 @@ fifo__result_t fifo__resize(fifo_t *fifo, size_t new_size)
   return FIFO__OK;
 }
 
+
+/* Empty the fifo and reset it to its pristine state.
+ */
+
 void fifo__flush(fifo_t *fifo)
 {
+  assert(fifo != NULL);
+  
   if (FIFO__IS_ZERO_SIZE(fifo)) {
     return;
   }
@@ -123,24 +147,38 @@ void fifo__flush(fifo_t *fifo)
   fifo->mask |= 0x01;
 }
 
+
 /* Returns non-zero if the fifo is full.
  * The lowest bit of the mask is used to indicate a full buffer.
  */
-bool_t fifo__is_full(fifo_t const *fifo)
+ 
+bool_t fifo__is_full(fifo_t * const fifo)
 {
+  assert(fifo != NULL);
+  
   return ~fifo->mask & 0x01; // || FIFO__IS_ZERO_SIZE(fifo);
 }
 
+
 /* Returns non-zero if the fifo is empty.
  */
-bool_t fifo__is_empty(fifo_t const *fifo)
+
+bool_t fifo__is_empty(fifo_t * const fifo)
 {
+  assert(fifo != NULL);
+  
   return (fifo->read == fifo->write && !fifo__is_full(fifo))
          || FIFO__IS_ZERO_SIZE(fifo);
 }
 
-size_t fifo__size(fifo_t const *fifo)
+
+/* Returns the total size of the buffer in bytes.
+ */
+
+size_t fifo__size(fifo_t * const fifo)
 {
+  assert(fifo != NULL);
+  
   if (FIFO__IS_ZERO_SIZE(fifo)) {
     return 0;
   }
@@ -148,10 +186,16 @@ size_t fifo__size(fifo_t const *fifo)
   return (fifo->mask | 0x01) + 1;
 }
 
-size_t fifo__used(fifo_t const *fifo)
+
+/* Returns the number of bytes currently used.
+ */
+
+size_t fifo__used(fifo_t * const fifo)
 {
   uint8_t mask = fifo->mask;
   size_t  used;
+  
+  assert(fifo != NULL);
   
   if (mask == 0) { // FIFO__IS_ZERO_SIZE
     return 0;
@@ -172,10 +216,16 @@ size_t fifo__used(fifo_t const *fifo)
   return (used & mask);
 }
 
-size_t fifo__available(fifo_t const *fifo)
+
+/* Returns the number of free bytes in the buffer.
+ */
+
+size_t fifo__available(fifo_t * const fifo)
 {
   uint8_t mask = fifo->mask;
   size_t  available;
+  
+  assert(fifo != NULL);
   
   /* If full */
   if ((mask & 0x01) == 0) {
@@ -195,6 +245,7 @@ size_t fifo__available(fifo_t const *fifo)
 /* Writes the given src buffer to the fifo.
  * The write cursor points to the position in the buffer that should be written to next.
  */
+ 
 size_t fifo__write(fifo_t *fifo, void const *src, size_t len)
 {
   uint8_t to_write;
@@ -204,6 +255,8 @@ size_t fifo__write(fifo_t *fifo, void const *src, size_t len)
   
   uint8_t const *src_buffer = (uint8_t const *) src;
   
+  assert(fifo != NULL);
+  assert(src != NULL);
   assert(len > 0);
     
   if (fifo__is_full(fifo)) {
@@ -256,6 +309,10 @@ bool_t fifo__write_force(fifo_t *fifo, void *src, size_t len)
 }
 
 
+/* Read a number of bytes from the buffer.
+ * Returns the number of bytes that where successfully read. 
+ */
+
 size_t fifo__read(fifo_t *fifo, void *dest, size_t len)
 {
   uint8_t  to_read;
@@ -265,6 +322,8 @@ size_t fifo__read(fifo_t *fifo, void *dest, size_t len)
   
   uint8_t *dest_buffer = (uint8_t *) dest;
   
+  assert(fifo != NULL);
+  assert(dest != NULL);
   assert(len > 0);
   
   cursor       = fifo->read;
@@ -313,7 +372,14 @@ size_t fifo__read(fifo_t *fifo, void *dest, size_t len)
   return len;
 }
 
-bool_t buffer_includes_edge(fifo_t *fifo)
+
+/* Private Function Definitions --------------------------------------------- */
+
+
+/* Check if the data currently held by the fifo wraps around the outer edges of
+ * the buffer. */
+
+bool_t buffer_includes_edge(fifo_t * const fifo)
 {
   uint8_t read_pos  = fifo->read;
   uint8_t write_pos = fifo->write;
@@ -326,6 +392,10 @@ bool_t buffer_includes_edge(fifo_t *fifo)
     return 0;
   }
 }
+
+
+/* Increase the size of the fifo.
+ */
 
 void grow_buffer(fifo_t *fifo, uint8_t mask)
 {
@@ -350,7 +420,11 @@ void grow_buffer(fifo_t *fifo, uint8_t mask)
   
   fifo->mask = mask;
 }
-/* These are the five different cases that need to be handled by the shrink
+
+
+/* Decrease the size of the fifo.
+ *
+ * These are the five different cases that need to be handled by the shrink
  * function, shown on a size 8 fifo that is to be halved in size.
  *
  *   0 1 2 3 4 5 6 7    Comment

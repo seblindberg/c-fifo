@@ -229,11 +229,11 @@ int main(int argc, char *argv[])
   test__read();
   test__grow_buffer();
   test__shrink_buffer();
-  
   test__zero_size_fifo();
   test__resize_zero_size_fifo();
-  
   test__uneven_buffer_size();
+  
+  puts("fifo passed all tests");
   
   return 0;
 }
