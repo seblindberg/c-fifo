@@ -1,4 +1,5 @@
 #include <fifo.h>
+#include <util/atomic.h>
 
 /* Notes:
  * The write index points to the next position that can be written to. The read
@@ -263,39 +264,41 @@ size_t fifo__write(fifo_t *fifo, void const *src, size_t len)
     return 0;
   }
   
-  cursor       = fifo->write;
-  cursor_limit = fifo->read;
-  mask         = fifo->mask;
-  
-  if (len > FIFO__SIZE_MAX) {
-    len = FIFO__SIZE_MAX;
-  }
-  
-  to_write = len;
-  
-  for (;;) {
-    fifo->buffer[cursor] = *(src_buffer++);
-    FIFO__ADVANCE_CURSOR(cursor, mask);
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    cursor       = fifo->write;
+    cursor_limit = fifo->read;
+    mask         = fifo->mask;
     
-    if (cursor == cursor_limit) {
-      len -= (to_write - 1);
-      
-      FIFO__MARK_AS_FULL(mask);
-      fifo->mask = mask;
-      
-      break;
+    if (len > FIFO__SIZE_MAX) {
+      len = FIFO__SIZE_MAX;
     }
     
-    if (--to_write == 0) {
-      break;
+    to_write = len;
+    
+    for (;;) {
+      fifo->buffer[cursor] = *(src_buffer++);
+      FIFO__ADVANCE_CURSOR(cursor, mask);
+      
+      if (cursor == cursor_limit) {
+        len -= (to_write - 1);
+        
+        FIFO__MARK_AS_FULL(mask);
+        fifo->mask = mask;
+        
+        break;
+      }
+      
+      if (--to_write == 0) {
+        break;
+      }
     }
+    
+    /* Update write position */
+    fifo->write = cursor;
+    
+    /* Because we are counting from 0 */
+    return len;
   }
-  
-  /* Update write position */
-  fifo->write = cursor;
-  
-  /* Because we are counting from 0 */
-  return len;
 }
 
 
@@ -326,50 +329,52 @@ size_t fifo__read(fifo_t *fifo, void *dest, size_t len)
   assert(dest != NULL);
   assert(len > 0);
   
-  cursor       = fifo->read;
-  cursor_limit = fifo->write;
-  mask         = fifo->mask;
-  
-  /* If not full */
-  if (mask & 0x01) {
-    /* Empty */
-    if (cursor == cursor_limit) {
-      return 0;
-    }
-  } else {
-    if (mask == 0) { // FIFO__IS_ZERO_SIZE
-      return 0;
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    cursor       = fifo->read;
+    cursor_limit = fifo->write;
+    mask         = fifo->mask;
+    
+    /* If not full */
+    if (mask & 0x01) {
+      /* Empty */
+      if (cursor == cursor_limit) {
+        return 0;
+      }
+    } else {
+      if (mask == 0) { // FIFO__IS_ZERO_SIZE
+        return 0;
+      }
+      
+      mask |= 0x01;
+      fifo->mask = mask;
     }
     
-    mask |= 0x01;
-    fifo->mask = mask;
+    /* Predict what the read size will be */
+    if (len > FIFO__SIZE_MAX) {
+      len = FIFO__SIZE_MAX;
+    }
+    
+    to_read = len;
+      
+    for (;;) {
+      /* Read at least one */
+      *(dest_buffer++) = fifo->buffer[cursor];
+      FIFO__ADVANCE_CURSOR(cursor, mask);
+      
+      if (cursor == cursor_limit) {
+        len -= (to_read - 1);
+        break;
+      }
+      
+      if (--to_read == 0) {
+        break;
+      }
+    }
+    
+    fifo->read = cursor;
+    
+    return len;
   }
-  
-  /* Predict what the read size will be */
-  if (len > FIFO__SIZE_MAX) {
-    len = FIFO__SIZE_MAX;
-  }
-  
-  to_read = len;
-    
-  for (;;) {
-    /* Read at least one */
-    *(dest_buffer++) = fifo->buffer[cursor];
-    FIFO__ADVANCE_CURSOR(cursor, mask);
-    
-    if (cursor == cursor_limit) {
-      len -= (to_read - 1);
-      break;
-    }
-    
-    if (--to_read == 0) {
-      break;
-    }
-  }
-  
-  fifo->read = cursor;
-  
-  return len;
 }
 
 
