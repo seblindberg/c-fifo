@@ -50,10 +50,8 @@ static uint8_t
  * always read as both empty and full. If instead a buffer handle was provided
  * the fifo can be resized using fifo__resize.
  */
-
 void fifo__ctor(fifo_t *fifo, void *buffer, size_t size)
 {
-  assert(fifo != NULL);
   assert(size <= FIFO__SIZE_MAX);
   assert(size >= FIFO__SIZE_MIN || size == 0);
   
@@ -73,17 +71,17 @@ void fifo__ctor(fifo_t *fifo, void *buffer, size_t size)
 }
 
 
-/* Change the size of the fifo buffer. Note that the underlying memory area must
+/* Resize
+ *
+ * Change the size of the fifo buffer. Note that the underlying memory area must
  * be big enough to contain the new size.
  */
-
-fifo__result_t fifo__resize(fifo_t *fifo, size_t new_size)
+fifo__result_t
+fifo__resize(fifo_t *fifo, size_t new_size)
 {
   size_t current_size = fifo->mask;
   uint8_t new_mask;
-  
-  assert(fifo != NULL);
-  
+    
   if (current_size & 0x0001) {
     current_size += 1;
   } else if (current_size > 0) {
@@ -131,13 +129,13 @@ fifo__result_t fifo__resize(fifo_t *fifo, size_t new_size)
 }
 
 
-/* Empty the fifo and reset it to its pristine state.
+/* Flush
+ *
+ * Empty the fifo and reset it to its pristine state.
  */
-
-void fifo__flush(fifo_t *fifo)
+void
+fifo__flush(fifo_t *fifo)
 {
-  assert(fifo != NULL);
-  
   if (FIFO__IS_ZERO_SIZE(fifo)) {
     return;
   }
@@ -147,38 +145,25 @@ void fifo__flush(fifo_t *fifo)
   fifo->mask |= 0x01;
 }
 
-
-/* Returns non-zero if the fifo is full.
- * The lowest bit of the mask is used to indicate a full buffer.
+/* Is Empty
+ *
+ * Returns non-zero if the fifo is empty.
  */
- 
-bool_t fifo__is_full(fifo_t const *fifo)
+bool_t
+fifo__is_empty(fifo_t const *fifo)
 {
-  assert(fifo != NULL);
-  
-  return ~fifo->mask & 0x01; // || FIFO__IS_ZERO_SIZE(fifo);
-}
-
-
-/* Returns non-zero if the fifo is empty.
- */
-
-bool_t fifo__is_empty(fifo_t const *fifo)
-{
-  assert(fifo != NULL);
-  
   return (fifo->read == fifo->write && !fifo__is_full(fifo))
          || FIFO__IS_ZERO_SIZE(fifo);
 }
 
 
-/* Returns the total size of the buffer in bytes.
+/* Size
+ *
+ * Returns the total size of the buffer in bytes.
  */
-
-size_t fifo__size(fifo_t const *fifo)
+size_t
+fifo__size(fifo_t const *fifo)
 {
-  assert(fifo != NULL);
-  
   if (FIFO__IS_ZERO_SIZE(fifo)) {
     return 0;
   }
@@ -187,16 +172,16 @@ size_t fifo__size(fifo_t const *fifo)
 }
 
 
-/* Returns the number of bytes currently used.
+/* Used
+ *
+ * Returns the number of bytes currently used.
  */
-
-size_t fifo__used(fifo_t const *fifo)
+size_t
+fifo__used(fifo_t const *fifo)
 {
   uint8_t mask = fifo->mask;
   size_t  used;
-  
-  assert(fifo != NULL);
-  
+    
   if (mask == 0) { // FIFO__IS_ZERO_SIZE
     return 0;
   }
@@ -217,16 +202,16 @@ size_t fifo__used(fifo_t const *fifo)
 }
 
 
-/* Returns the number of free bytes in the buffer.
+/* Available
+ *
+ * Returns the number of free bytes in the buffer.
  */
-
-size_t fifo__available(fifo_t const *fifo)
+size_t
+fifo__available(fifo_t const *fifo)
 {
   uint8_t mask = fifo->mask;
   size_t  available;
-  
-  assert(fifo != NULL);
-  
+    
   /* If full */
   if ((mask & 0x01) == 0) {
     return 0;
@@ -242,11 +227,14 @@ size_t fifo__available(fifo_t const *fifo)
   return (available & mask);
 }
 
-/* Writes the given src buffer to the fifo.
- * The write cursor points to the position in the buffer that should be written to next.
+/* Write
+ *
+ * Writes the given src buffer to the fifo.
+ * The write cursor points to the position in the buffer that should be written
+ * to next.
  */
- 
-size_t fifo__write(fifo_t *fifo, void const *src, size_t len)
+size_t
+fifo__write(fifo_t *fifo, void const *src, size_t len)
 {
   uint8_t to_write;
   uint8_t cursor;
@@ -299,21 +287,25 @@ size_t fifo__write(fifo_t *fifo, void const *src, size_t len)
 }
 
 
-/* Not yet implemented.
+/* Force Write
+ *
+ * Not yet implemented.
  */
-
-bool_t fifo__write_force(fifo_t *fifo, void const *src, size_t len)
+bool_t
+fifo__write_force(fifo_t *fifo, void const *src, size_t len)
 {
   assert(0);
   return 0;
 }
 
 
-/* Read a number of bytes from the buffer.
+/* Read
+ *
+ * Read a number of bytes from the buffer.
  * Returns the number of bytes that where successfully read.
  */
-
-size_t fifo__read(fifo_t *fifo, void *dest, size_t len)
+size_t
+fifo__read(fifo_t *fifo, void *dest, size_t len)
 {
   uint8_t  to_read;
   uint8_t  cursor;
@@ -376,10 +368,13 @@ size_t fifo__read(fifo_t *fifo, void *dest, size_t len)
 /* Private Function Definitions --------------------------------------------- */
 
 
-/* Check if the data currently held by the fifo wraps around the outer edges of
- * the buffer. */
-
-bool_t buffer_includes_edge(fifo_t const *fifo)
+/* Buffer Includes Edges [private]
+ *
+ * Check if the data currently held by the fifo wraps around the outer edges of
+ * the buffer.
+ */
+bool_t
+buffer_includes_edge(fifo_t const *fifo)
 {
   uint8_t read_pos  = fifo->read;
   uint8_t write_pos = fifo->write;
@@ -394,10 +389,12 @@ bool_t buffer_includes_edge(fifo_t const *fifo)
 }
 
 
-/* Increase the size of the fifo.
+/* Grow Buffer [private]
+ *
+ * Increase the size of the fifo.
  */
-
-void grow_buffer(fifo_t *fifo, uint8_t mask)
+void
+grow_buffer(fifo_t *fifo, uint8_t mask)
 {
   if (buffer_includes_edge(fifo)) {
     uint8_t move_from             = 0;
@@ -422,7 +419,9 @@ void grow_buffer(fifo_t *fifo, uint8_t mask)
 }
 
 
-/* Decrease the size of the fifo.
+/* Shrink Buffer [private]
+ *
+ * Decrease the size of the fifo.
  *
  * These are the five different cases that need to be handled by the shrink
  * function, shown on a size 8 fifo that is to be halved in size.
@@ -434,7 +433,8 @@ void grow_buffer(fifo_t *fifo, uint8_t mask)
  * D . ] W .|. . [ .    The lower half must be copied.
  * E . [ . .|. . ] W    The buffer cannot be shrunk.
  */
-fifo__result_t shrink_buffer(fifo_t *fifo, uint8_t mask)
+fifo__result_t
+shrink_buffer(fifo_t *fifo, uint8_t mask)
 {
   size_t  const new_size = (mask + 1);
   size_t  const used     = fifo__used(fifo);
@@ -533,10 +533,14 @@ fifo__shrink_buffer__mask:
   return FIFO__OK;
 }
 
-/* The largest size supported is 0x100.
+/* Size to Mask [private]
+ *
+ * The largest size supported is 0x100.
+ *
+ * TODO: Optimize this for size.
  */
-
-uint8_t size_to_mask(size_t size)
+uint8_t
+size_to_mask(size_t size)
 {
   uint8_t mask;
   

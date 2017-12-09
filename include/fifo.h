@@ -52,36 +52,61 @@ typedef enum {
 /* Public Functions --------------------------------------------------------- */
 
 void
-  fifo__ctor(fifo_t *fifo, void *buffer, size_t size);
+  fifo__ctor(fifo_t *fifo, void *buffer, size_t size)
+  NONNULL_ARGS(1);
   
 fifo__result_t
-  fifo__resize(fifo_t *fifo, size_t new_size);
+  fifo__resize(fifo_t *fifo, size_t new_size)
+  NONNULL;
 
 void
-  fifo__flush(fifo_t *fifo);
+  fifo__flush(fifo_t *fifo)
+  NONNULL;
 
-bool_t
-  fifo__is_full(fifo_t const *fifo);
+static inline bool_t
+  fifo__is_full(fifo_t const *fifo)
+  NONNULL;
   
 bool_t
-  fifo__is_empty(fifo_t const *fifo);
+  fifo__is_empty(fifo_t const *fifo)
+  NONNULL;
   
 size_t
-  fifo__size(fifo_t const *fifo);
+  fifo__size(fifo_t const *fifo)
+  NONNULL;
   
 size_t
-  fifo__used(fifo_t const *fifo);
+  fifo__used(fifo_t const *fifo)
+  NONNULL;
   
 size_t
-  fifo__available(fifo_t const *fifo);
+  fifo__available(fifo_t const *fifo)
+  NONNULL;
   
 size_t
-  fifo__write(fifo_t *fifo, void const *src, size_t len);
+  fifo__write(fifo_t *fifo, void const *src, size_t len)
+  NONNULL;
   
 bool_t
-  fifo__write_force(fifo_t *fifo, void const *src, size_t len);
+  fifo__write_force(fifo_t *fifo, void const *src, size_t len)
+  NONNULL;
 
 size_t
-  fifo__read(fifo_t *fifo, void *dest, size_t size);
+  fifo__read(fifo_t *fifo, void *dest, size_t size)
+  NONNULL;
+  
+
+/* Inline Function Definitions ---------------------------------------------- */
+  
+/* Is Full
+ *
+ * Returns non-zero if the fifo is full.
+ * The lowest bit of the mask is used to indicate a full buffer.
+ */
+bool_t
+fifo__is_full(fifo_t const *fifo)
+{
+  return ~fifo->mask & 0x01; // || FIFO__IS_ZERO_SIZE(fifo);
+}
 
 #endif /* FIFO_H */

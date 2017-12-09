@@ -29,7 +29,7 @@ typedef uint_fast8_t bool_t;
   __attribute__((__deprecated__))
 #define NONNULL                                   __attribute__((__nonnull__))
 #define NONNULL_ARGS(...)                                   \
-  __attribute__((__nonnull__ (##__VA_ARGS__)))
+  __attribute__((__nonnull__ (__VA_ARGS__)))
 #define PURE                                      __attribute__((__pure__))
 
 #endif /* COMPILER_H */
