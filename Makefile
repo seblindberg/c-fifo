@@ -1,17 +1,17 @@
-CC = gcc
+CC ?= gcc
 MKDIR_P = mkdir -p
 
 # Library name
 LIBRARY_NAME = fifo
 
 # Configure directories
-SRC_DIR  = src
-INC_DIR  = include
-OBJ_DIR  = obj
-LIB_DIR  = lib
-BLD_DIR  = build
-TST_DIR  = tests
-TST_DEPS = helper
+SRC_DIR  ?= src
+INC_DIR  ?= include
+OBJ_DIR  ?= obj
+LIB_DIR  ?= lib
+BLD_DIR  ?= build
+TST_DIR  ?= tests
+TST_DEPS ?= helper
 
 LIBRARY  = $(LIB_DIR)/lib$(LIBRARY_NAME).a
 
@@ -29,7 +29,6 @@ TST_EXE = $(TST_SRC:$(TST_DIR)/%.c=%)
 TST_DEPS_OBJ = $(TST_DEPS:%=$(OBJ_DIR)/%.o)
 
 #$(info [${TST_DEPS_OBJ}])
-
 
 # FLAGS ------------------------------------------------------------------------
 
